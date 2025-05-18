@@ -2,7 +2,7 @@ This is a new [**React Native**](https://reactnative.dev) project, bootstrapped 
 
 We are attaching the Screen Recording of the web app:
 [[https://drive.google.com/file/d/1jCvuePhgC_Q_Qw3siTOUePILYiwFTy2V/view?usp=sharing](https://drive.google.com/file/d/1M2mwEVcwGXH6y9Lde_XqM8VCDMG1sY08/view?usp=sharing)
-# Getting Started](https://drive.google.com/file/d/1M2mwEVcwGXH6y9Lde_XqM8VCDMG1sY08/view?usp=sharing)
+# Getting Started]
 
 > **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
 
