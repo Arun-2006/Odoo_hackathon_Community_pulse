@@ -52,8 +52,8 @@ const CommunityPulse = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUser] = useState<AppUser>({
     id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
+    name: 'Arun',
+    email: 'arun@example.com',
     role: 'admin',
     isBanned: false
   });
@@ -89,7 +89,7 @@ const CommunityPulse = () => {
         date: '2023-07-15',
         time: '09:00',
         location: 'Central Park',
-        creator: 'Jane Smith',
+        creator: 'Dhipin',
         status: 'approved',
         interestedUsers: []
       },
@@ -101,7 +101,7 @@ const CommunityPulse = () => {
         date: '2023-07-16',
         time: '08:00',
         location: 'Riverside Park',
-        creator: 'John Doe',
+        creator: 'Arun',
         status: 'pending',
         interestedUsers: []
       }
@@ -110,15 +110,15 @@ const CommunityPulse = () => {
     const sampleUsers: AppUser[] = [
       {
         id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
+        name: 'Arun',
+        email: 'arun@example.com',
         role: 'user',
         isBanned: false
       },
       {
         id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
+        name: 'Dhipin',
+        email: 'dhipin@example.com',
         role: 'verified-organizer',
         isBanned: false
       },
@@ -307,7 +307,7 @@ const CommunityPulse = () => {
         </ScrollView>
       )}
 
-      {/* Add additional tab rendering if needed */}
+      {/* Add other tab views like post, admin etc. here if needed */}
     </View>
   );
 };
@@ -399,4 +399,3 @@ const styles = StyleSheet.create({
 });
 
 export default CommunityPulse;
-
