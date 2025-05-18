@@ -2,400 +2,275 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
+  FlatList,
+  TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
-  TextInput,
-  FlatList,
-  PermissionsAndroid,
-  Platform
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
 } from 'react-native';
-import Geolocation from '@react-native-community/geolocation';
 
-// Type definitions
 type Event = {
   id: string;
   title: string;
   description: string;
-  category: string;
   date: string;
   time: string;
   location: string;
-  distance?: number;
-  creator: string;
   status: 'pending' | 'approved' | 'rejected';
-  interestedUsers: Array<{
-    name: string;
-    email: string;
-    phone: string;
-    people: number;
-  }>;
+  creator: string;
 };
 
-type UserRole = 'user' | 'admin' | 'verified-organizer';
-
-type AppUser = {
+type User = {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: 'user' | 'admin';
   isBanned: boolean;
 };
 
-const CommunityPulse = () => {
-  const [activeTab, setActiveTab] = useState<'events' | 'post' | 'admin'>('events');
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+export default function CommunityPulseApp() {
   const [events, setEvents] = useState<Event[]>([]);
-  const [users, setUsers] = useState<AppUser[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [currentUser] = useState<AppUser>({
-    id: '1',
-    name: 'Arun',
-    email: 'arun@example.com',
-    role: 'admin',
-    isBanned: false
-  });
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [eventForm, setEventForm] = useState({
-    title: '',
-    description: '',
-    category: '',
-    date: '',
-    time: '',
-    location: ''
-  });
-
-  const [interestForm, setInterestForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    people: '1'
-  });
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [activeTab, setActiveTab] = useState<'events' | 'submit' | 'admin'>('events');
+  const [newEvent, setNewEvent] = useState<Partial<Event>>({});
 
   useEffect(() => {
-    getLocation();
-
-    const sampleEvents: Event[] = [
+    // Dummy data for testing
+    setEvents([
       {
         id: '1',
-        title: 'Community Cleanup',
-        description: 'Help clean up the local park!',
-        category: 'volunteer',
-        date: '2023-07-15',
-        time: '09:00',
-        location: 'Central Park',
-        creator: 'Dhipin',
+        title: 'Beach Cleanup',
+        description: 'Join us to clean the beach!',
+        date: '2025-05-20',
+        time: '10:00 AM',
+        location: 'Marina Beach',
         status: 'approved',
-        interestedUsers: []
+        creator: 'user1@example.com',
       },
       {
         id: '2',
-        title: 'Yoga in the Park',
-        description: 'Morning yoga session',
-        category: 'fitness',
-        date: '2023-07-16',
-        time: '08:00',
-        location: 'Riverside Park',
-        creator: 'Arun',
+        title: 'Tree Planting',
+        description: 'Let’s plant some trees together.',
+        date: '2025-05-21',
+        time: '09:00 AM',
+        location: 'City Park',
         status: 'pending',
-        interestedUsers: []
-      }
-    ];
+        creator: 'user2@example.com',
+      },
+    ]);
 
-    const sampleUsers: AppUser[] = [
+    setUsers([
       {
-        id: '1',
-        name: 'Arun',
-        email: 'arun@example.com',
+        id: 'u1',
+        name: 'Alice',
+        email: 'user1@example.com',
         role: 'user',
-        isBanned: false
+        isBanned: false,
       },
       {
-        id: '2',
-        name: 'Dhipin',
-        email: 'dhipin@example.com',
-        role: 'verified-organizer',
-        isBanned: false
+        id: 'u2',
+        name: 'Bob',
+        email: 'user2@example.com',
+        role: 'user',
+        isBanned: false,
       },
-      {
-        id: '3',
-        name: 'Admin User',
-        email: 'admin@example.com',
-        role: 'admin',
-        isBanned: false
-      }
-    ];
+    ]);
 
-    setEvents(sampleEvents);
-    setUsers(sampleUsers);
-    setIsAdmin(currentUser.role === 'admin');
+    setLoading(false);
   }, []);
 
-  const requestLocationPermission = async (): Promise<boolean> => {
-    if (Platform.OS === 'ios') return true;
+  const renderEvent = ({ item }: { item: Event }) => (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>{item.title}</Text>
+      <Text>{item.description}</Text>
+      <Text>{item.date} • {item.time}</Text>
+      <Text>{item.location}</Text>
+      <Text>Status: {item.status}</Text>
+    </View>
+  );
 
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          title: 'Location Access Needed',
-          message: 'This app needs to access your location to show nearby events.',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK'
-        }
-      );
-      return granted === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (err) {
-      console.warn(err);
-      return false;
+  const handleSubmit = () => {
+    if (
+      newEvent.title &&
+      newEvent.description &&
+      newEvent.date &&
+      newEvent.time &&
+      newEvent.location
+    ) {
+      const event: Event = {
+        id: Date.now().toString(),
+        title: newEvent.title,
+        description: newEvent.description,
+        date: newEvent.date,
+        time: newEvent.time,
+        location: newEvent.location,
+        status: 'pending',
+        creator: 'user1@example.com',
+      };
+      setEvents(prev => [...prev, event]);
+      setNewEvent({});
+      alert('Event submitted for approval!');
+    } else {
+      alert('Please fill in all fields.');
     }
-  };
-
-  const getLocation = async () => {
-    const hasPermission = await requestLocationPermission();
-    if (!hasPermission) {
-      setError('Location permission denied');
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    Geolocation.getCurrentPosition(
-      position => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        });
-        setLoading(false);
-      },
-      error => {
-        setError(error.message);
-        setLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-    );
-  };
-
-  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    return Math.sqrt(Math.pow(lat2 - lat1, 2) + Math.pow(lon2 - lon1, 2)) * 100;
-  };
-
-  const handleEventSubmit = () => {
-    const newEvent: Event = {
-      id: Date.now().toString(),
-      ...eventForm,
-      creator: currentUser.name,
-      status: currentUser.role === 'verified-organizer' ? 'approved' : 'pending',
-      interestedUsers: []
-    };
-    setEvents([...events, newEvent]);
-    setEventForm({
-      title: '',
-      description: '',
-      category: '',
-      date: '',
-      time: '',
-      location: ''
-    });
-    setActiveTab('events');
-    Alert.alert('Success', 'Your event has been submitted!');
-  };
-
-  const handleInterestSubmit = () => {
-    if (!selectedEvent) return;
-
-    const updatedEvent = {
-      ...selectedEvent,
-      interestedUsers: [...selectedEvent.interestedUsers, {
-        ...interestForm,
-        people: parseInt(interestForm.people) || 1
-      }]
-    };
-
-    setEvents(events.map(e => e.id === selectedEvent.id ? updatedEvent : e));
-    setSelectedEvent(updatedEvent);
-    setInterestForm({
-      name: '',
-      email: '',
-      phone: '',
-      people: '1'
-    });
-    Alert.alert('Success', 'Thanks for your interest!');
   };
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text>Getting your location...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Location Error</Text>
-          <View style={styles.divider} />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.button} onPress={getLocation}>
-            <Text style={styles.buttonText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="blue" />
+        <Text>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.tabBar}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'events' && styles.activeTab]}
-          onPress={() => setActiveTab('events')}
-        >
+    <SafeAreaView style={styles.container}>
+      <View style={styles.tabs}>
+        <TouchableOpacity onPress={() => setActiveTab('events')} style={[styles.tab, activeTab === 'events' && styles.activeTab]}>
           <Text style={styles.tabText}>Browse Events</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'post' && styles.activeTab]}
-          onPress={() => setActiveTab('post')}
-        >
+        <TouchableOpacity onPress={() => setActiveTab('submit')} style={[styles.tab, activeTab === 'submit' && styles.activeTab]}>
           <Text style={styles.tabText}>Post Event</Text>
         </TouchableOpacity>
-        {isAdmin && (
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'admin' && styles.activeTab]}
-            onPress={() => setActiveTab('admin')}
-          >
-            <Text style={styles.tabText}>Admin</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity onPress={() => setActiveTab('admin')} style={[styles.tab, activeTab === 'admin' && styles.activeTab]}>
+          <Text style={styles.tabText}>Admin Panel</Text>
+        </TouchableOpacity>
       </View>
 
-      {activeTab === 'events' && !selectedEvent && (
-        <ScrollView>
-          <View style={styles.header}>
-            <Text style={styles.headerText}>Events Near You</Text>
-            <TouchableOpacity style={styles.refreshButton} onPress={getLocation}>
-              <Text style={styles.buttonText}>Refresh</Text>
-            </TouchableOpacity>
-          </View>
-
+      <ScrollView style={styles.content}>
+        {activeTab === 'events' && (
           <FlatList
             data={events.filter(e => e.status === 'approved')}
-            renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => setSelectedEvent(item)}>
-                <View style={styles.card}>
-                  <Text style={styles.cardTitle}>{item.title}</Text>
-                  <View style={styles.divider} />
-                  <Text style={styles.description}>{item.description}</Text>
-                  <View style={styles.eventFooter}>
-                    <Text>{item.date} • {item.location}</Text>
-                    <Text>{item.interestedUsers.length} interested</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )}
             keyExtractor={item => item.id}
+            renderItem={renderEvent}
           />
-        </ScrollView>
-      )}
+        )}
 
-      {/* Add other tab views like post, admin etc. here if needed */}
-    </View>
+        {activeTab === 'submit' && (
+          <View>
+            <TextInput
+              placeholder="Title"
+              value={newEvent.title}
+              onChangeText={text => setNewEvent(prev => ({ ...prev, title: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Description"
+              value={newEvent.description}
+              onChangeText={text => setNewEvent(prev => ({ ...prev, description: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Date (YYYY-MM-DD)"
+              value={newEvent.date}
+              onChangeText={text => setNewEvent(prev => ({ ...prev, date: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Time (e.g., 10:00 AM)"
+              value={newEvent.time}
+              onChangeText={text => setNewEvent(prev => ({ ...prev, time: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Location"
+              value={newEvent.location}
+              onChangeText={text => setNewEvent(prev => ({ ...prev, location: text }))}
+              style={styles.input}
+            />
+            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+              <Text style={styles.buttonText}>Submit Event</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {activeTab === 'admin' && (
+          <View>
+            <Text style={styles.sectionHeader}>Pending Events</Text>
+            {events.filter(e => e.status === 'pending').map(event => (
+              <View key={event.id} style={styles.card}>
+                <Text style={styles.cardTitle}>{event.title}</Text>
+                <Text>{event.description}</Text>
+                <Text>{event.date} • {event.time} • {event.location}</Text>
+                <Text>By: {event.creator}</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+                  <TouchableOpacity
+                    style={[styles.button, { backgroundColor: 'green' }]}
+                    onPress={() =>
+                      setEvents(prev => prev.map(e => e.id === event.id ? { ...e, status: 'approved' } : e))
+                    }
+                  >
+                    <Text style={styles.buttonText}>Approve</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, { backgroundColor: 'red' }]}
+                    onPress={() =>
+                      setEvents(prev => prev.map(e => e.id === event.id ? { ...e, status: 'rejected' } : e))
+                    }
+                  >
+                    <Text style={styles.buttonText}>Reject</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+
+            <Text style={styles.sectionHeader}>Users</Text>
+            {users.map(user => (
+              <View key={user.id} style={styles.card}>
+                <Text style={styles.cardTitle}>{user.name}</Text>
+                <Text>{user.email}</Text>
+                <Text>Role: {user.role}</Text>
+                <Text>Status: {user.isBanned ? 'Banned' : 'Active'}</Text>
+                <TouchableOpacity
+                  style={[styles.button, { backgroundColor: user.isBanned ? 'green' : 'red' }]}
+                  onPress={() =>
+                    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isBanned: !u.isBanned } : u))
+                  }
+                >
+                  <Text style={styles.buttonText}>{user.isBanned ? 'Unban' : 'Ban'}</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 10
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  tabBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 10,
+  container: { flex: 1, paddingTop: 40, backgroundColor: '#f2f2f2' },
+  tabs: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 10 },
+  tab: { padding: 10, backgroundColor: '#ccc', borderRadius: 8 },
+  activeTab: { backgroundColor: '#007BFF' },
+  tabText: { color: '#fff', fontWeight: 'bold' },
+  content: { paddingHorizontal: 15 },
+  input: {
     backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 5
-  },
-  tabButton: {
     padding: 10,
-    borderRadius: 5
-  },
-  activeTab: {
-    backgroundColor: '#4a8cff'
-  },
-  tabText: {
-    color: '#333'
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 10
-  },
-  errorText: {
-    color: 'red',
-    marginBottom: 10
+    borderRadius: 8,
   },
   button: {
-    backgroundColor: '#4a8cff',
     padding: 10,
-    borderRadius: 5,
-    alignItems: 'center'
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold'
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: '#007BFF',
+    marginTop: 10,
+    borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 10
   },
-  headerText: {
-    fontSize: 20,
-    fontWeight: 'bold'
+  buttonText: { color: '#fff', fontWeight: 'bold' },
+  card: {
+    backgroundColor: '#fff',
+    padding: 15,
+    marginVertical: 6,
+    borderRadius: 8,
+    elevation: 1,
   },
-  refreshButton: {
-    backgroundColor: '#4a8cff',
-    padding: 8,
-    borderRadius: 5
-  },
-  eventFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10
-  }
+  cardTitle: { fontSize: 16, fontWeight: 'bold' },
+  sectionHeader: { fontSize: 18, fontWeight: 'bold', marginVertical: 10 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
-
-export default CommunityPulse;
